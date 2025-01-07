@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebGIS</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- Leaflet Measure Plugin -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure/dist/leaflet-measure.css" />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-measure/dist/leaflet-measure.js"></script>
+  <!-- Leaflet EasyPrint Plugin -->
+  <script src="https://rawgit.com/rowanwins/leaflet-easyPrint/gh-pages/dist/bundle.js"></script>
+  <style>
+  body {
+      padding: 0;
+      margin: 0;
+      background-color: #f9f7f1;
+    }
+    #map {
+      width: 100%;
+      height: 75vh;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif; 
+        font-size: 2.2rem; 
+        font-weight: 700; 
+        color: #333; 
+        text-align: center; 
+        margin-top: 10px;
+        margin-bottom: 20px; 
+        line-height: 1.4; 
+        text-transform: capitalize; 
+        letter-spacing: 0.5px; 
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); 
+        border-bottom: 2px solid #f0a500; 
+        display: inline-block; 
+        padding-bottom: 5px; 
+    }
+    .content {
+    max-width: 900px; 
+    margin: 40px auto; 
+    padding: 20px;
+    background-color: #fff; 
+    border-radius: 10px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
+    border-left: 8px solid #d4af37; 
+  }
+
+  .content p {
+    margin-bottom: 20px; 
+    font-family: italic; 
+    font-size: 1.7rem; 
+    line-height: 1.8;
+    text-align: justify; 
+    color: black; 
+  }
+
+  .content strong {
+    color: #b8860b; 
+    font-weight: bold; 
+  }
+
+  .content p:first-child {
+    font-size: 1.7rem; 
+    color:black; 
+  }
+
+  /* Add spacing for each section */
+  .content p + p {
+    margin-top: 15px;
+  }
+   
+  </style>
+</head>
+<body>
+  <h1>Biodiversity and Proximity Analysis</h1>
+  <div id="map"></div>
+  <div class="content">
+  
+  <p>
+    Biodiversity refers to the variety of life on Earth, encompassing all living organisms, including plants, animals, fungi, and microorganisms, as well as the ecosystems they form. This diversity exists on three primary levels: genetic diversity (the variation within species), species diversity (the variety of species in a given area), and ecosystem diversity (the range of habitats and ecological processes). Biodiversity is vital for maintaining the balance of ecosystems, ensuring the functioning of natural systems, and providing essential services such as food, clean water, air purification, and climate regulation. It also holds cultural, recreational, and scientific significance, making it an invaluable asset for humanity.
+</p>
+<p>
+    In the animal kingdom, iconic species such as the sloth bear, clouded leopard, and striped hyena illustrate the incredible diversity within ecosystems. The sloth bear, with its specialized diet of termites and ants, highlights the adaptability of species to specific ecological niches. The clouded leopard, an elusive and arboreal predator, represents the evolutionary marvels of forest ecosystems, while the striped hyena plays a vital role as a scavenger, recycling nutrients and maintaining ecological balance. Together, these species symbolize the interconnectedness of life and the critical importance of conserving biodiversity to ensure the survival of such unique organisms and the ecosystems they inhabit.
+</p>
+
+  <script>
+    // Initialize the map
+    const map = L.map('map').setView([28.3949, 84.1240], 7);
+
+    // Base layers
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    const tomtomLayer = L.tileLayer('https://api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=XWOSkL3lVYVWiImRMmFDjGWwJ04XGAQu', {
+      attribution: '&copy; TomTom',
+      maxZoom: 22,
+      errorTileUrl: 'https://via.placeholder.com/256?text=Tile+Error'
+    });
+
+    const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '&copy; Google Maps contributors'
+    });
+
+    // Layer groups
+    const geoJsonProvincesLayer = L.layerGroup();
+    const geoJsonDistrictsLayer = L.layerGroup();
+    const geoJsonSloth_BearLayer = L.layerGroup();
+    const geoJsonLeopardCatLayer = L.layerGroup();
+    const geoJsonStripedHyaenaLayer = L.layerGroup();
+
+    // Layer controls
+    const baseLayers = {
+      "OpenStreetMap": osmLayer,
+      "Satellite View": satelliteLayer,
+      "TomTom": tomtomLayer
+    };
+
+    const overlayLayers = {
+      "Provinces": geoJsonProvincesLayer,
+      "Districts": geoJsonDistrictsLayer,
+      "Sloth Bear Habitat": geoJsonSloth_BearLayer,
+      "Leopard Cat Habitat": geoJsonLeopardCatLayer,
+      "Striped Hyaena Habitat": geoJsonStripedHyaenaLayer
+    };
+
+    L.control.layers(baseLayers, overlayLayers).addTo(map);
+
+    // Load GeoJSON data
+    const geojsonFiles = [
+      { url: 'Sloth_Bear.geojson', layer: geoJsonSloth_BearLayer, name: 'Sloth Bear Habitat',color:'red' },
+      { url: 'province.geojson', layer: geoJsonProvincesLayer, name: 'Provinces' },
+      { url: 'District.geojson', layer: geoJsonDistrictsLayer, name: 'Districts' },
+      { url: 'Leopard_Cat_all0.geojson', layer: geoJsonLeopardCatLayer, name: 'Leopard Cat Habitat',color:'green' },
+      { url: 'Striped_Hyaena.geojson', layer: geoJsonStripedHyaenaLayer, name: 'Striped Hyaena Habitat',color:"blue" }
+    ];
+
+    geojsonFiles.forEach(file => {
+      axios.get(file.url)
+        .then(response => {
+          L.geoJSON(response.data, {
+            onEachFeature: function (feature, layer) {
+              let popupContent = `<b>${file.name} Details:</b><br>`;
+              for (const key in feature.properties) {
+                popupContent += `<b>${key}:</b> ${feature.properties[key]}<br>`;
+              }
+              layer.bindPopup(popupContent);
+            },
+            pointToLayer: function (feature, latlng) {
+              return L.circleMarker(latlng, {
+                radius: 5,
+                color: 'black',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8,
+                fillColor: file.color
+              });
+            }
+          }).addTo(file.layer);
+        })
+        .catch(error => console.error(`Error loading ${file.name} GeoJSON data:`, error));
+    });var proximityLayer = L.featureGroup().addTo(map);
+    
+    function performProximityAnalysis(lat, lng, radius) {
+
+  proximityLayer.clearLayers();
+
+  // Draw a circle to represent the proximity radius
+  var circle = L.circle([lat, lng], {
+    radius: radius,
+    color: "red",
+    fillColor: "#f03",
+    fillOpacity: 0.2
+  }).addTo(proximityLayer);
+
+  // Calculate the bounds of the circle and adjust the map view
+  map.fitBounds(circle.getBounds());
+
+  // Check for nearby points within the radius
+  pointsLayer.eachLayer(function (layer) {
+    var distance = map.distance([lat, lng], layer.getLatLng());
+    if (distance <= radius) {
+      L.circleMarker(layer.getLatLng(), {
+        radius: 10,
+        color: "blue",
+        fillColor: "#03f",
+        fillOpacity: 0.8
+      }).addTo(proximityLayer).bindPopup(
+        "Nearby Point: " + layer.options.title + "<br>Distance: " + distance.toFixed(2) + " meters"
+      );
+    }
+  });
+}
+
+// Map click event for user input
+var userMarker;
+map.on('click', function (e) {
+  if (userMarker) {
+    map.removeLayer(userMarker);
+  }
+
+  userMarker = L.marker(e.latlng).addTo(map).bindPopup(
+    "Latitude: " + e.latlng.lat.toFixed(4) +
+    "<br>Longitude: " + e.latlng.lng.toFixed(4) +
+    "<br><button id='analyze-btn'>Analyze Proximity</button>"
+  ).openPopup();
+
+  document.addEventListener('click', function (event) {
+    if (event.target && event.target.id === 'analyze-btn') {
+      var radius = prompt("Enter proximity radius in meters:");
+      if (radius) {
+        performProximityAnalysis(e.latlng.lat, e.latlng.lng, parseFloat(radius));
+      }
+    }
+  });
+});
+
+    // measurement tool
+    L.control.measure({
+  primaryLengthUnit: 'meters',
+  secondaryLengthUnit: 'kilometers',
+  primaryAreaUnit: 'sqmeters',
+  secondaryAreaUnit: 'hectares',
+  activeColor: '#ff5733',
+  completedColor: '#3388ff',
+  position: 'topright' // Explicitly set position to avoid conflicts
+}).addTo(map);
+    // EasyPrint plugin
+    L.easyPrint({
+  title: 'Print Map',
+  position: 'topright',
+  sizeModes: ['Current', 'A4Landscape', 'A4Portrait'],
+  filename: 'Map_Print',
+}).addTo(map);
+    L.control.scale().addTo(map);
+  </script>
+</body>
+</html>
+

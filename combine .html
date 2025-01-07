@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet GeoServer Example</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Leaflet CSS and JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet Measure Plugin -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure/dist/leaflet-measure.css" />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-measure/dist/leaflet-measure.js"></script>
+  <!-- Leaflet EasyPrint Plugin -->
+  <script src="https://rawgit.com/rowanwins/leaflet-easyPrint/gh-pages/dist/bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+      background-color: "grey";
+    }
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+    .search-bar {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 30px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .search-bar input {
+      width: 350px;
+      height: 40px;
+      font-size: 18px;
+      padding: 0 20px;
+      border: 2px solid #d4d4d4;
+      border-radius: 25px 0 0 25px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease-in-out;
+      background: #ffffff;
+    }
+
+    .search-bar input::placeholder {
+      font-style: italic;
+      color: #999;
+    }
+
+    .search-bar input:focus {
+      border-color: #165fe5;
+      box-shadow: 0 0 10px rgba(22, 95, 229, 0.5);
+      outline: none;
+    }
+
+    .search-bar button {
+      height: 40px;
+      width: 120px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      background-color: #165fe5;
+      border: none;
+      border-radius: 0 25px 25px 0;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .search-bar button:hover {
+      background-color: #133db8;
+      transform: scale(1.05);
+    }
+     
+
+    h1 {
+      background-color: rgb(234, 150, 206);
+      padding: 15px;
+      text-align: center;
+      margin: 0;
+      font-size: 24px;
+    }
+</style>
+</head>
+<body>
+  <h1>Impact of Linear Infrastructure Development within Dolakha District of GCA</h1>
+  <div class="search-bar">
+    <input type="text" id="location-input" placeholder="Search Location">
+    <button id="search-btn">Search</button>
+  </div>
+
+  <!-- Map Display -->
+  <div id="map"></div>
+  <script>
+    var map = L.map('map').setView([27.7784, 86.1752], 10); 
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var OpenTopoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17,
+      attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+    });
+
+    // API for weather
+    const apiUrl = "https://api.open-meteo.com/v1/forecast?latitude=27.63&longitude=86.15&current_weather=true";
+    let weatherMarker;
+
+    axios.get(apiUrl)
+      .then(response => {
+        const current = response.data.current_weather;
+        document.getElementById("current").innerText = `
+          Time: ${current.time}
+          | Temperature: ${current.temperature} °C
+          | Wind Speed: ${current.windspeed} m/s
+        `;
+        weatherMarker = L.marker([27.63, 86.15]).addTo(map).bindPopup(`
+          <b>Temperature:</b> ${current.temperature} °C<br>
+          <b>Wind Speed:</b> ${current.windspeed} m/s
+        `).openPopup();
+      })
+      .catch(error => {
+        console.log("Error fetching weather data", error);
+      });
+
+    document.getElementById('search-btn').addEventListener('click', () => {
+      const locationInput = document.getElementById('location-input').value;
+      if (locationInput) {
+        fetch(`https://nominatim.openstreetmap.org/search?q=${locationInput}&format=json&limit=1`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.length > 0) {
+              const latLng = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+              map.setView(latLng, 14);
+              if (weatherMarker) {
+                map.removeLayer(weatherMarker);
+              }
+              weatherMarker = L.marker(latLng).addTo(map);
+              fetchWeatherData(latLng[0], latLng[1]);
+            } else {
+              alert('Location not found.');
+            }
+          });
+      }
+    });
+
+    function fetchWeatherData(lat, lon) {
+      const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+      axios.get(weatherApiUrl)
+        .then(response => {
+          const current = response.data.current_weather;
+          weatherMarker.bindPopup(`
+            <b>Temperature:</b> ${current.temperature} °C<br>
+            <b>Wind Speed:</b> ${current.windspeed} m/s<br>
+            <b>Humidity:</b> ${current.relative_humidity_2m} %
+          `).openPopup();
+        })
+        .catch(error => {
+          console.log("Error fetching weather data", error);
+        });
+    }
+var geoserverUrl = "http://localhost:8080/geoserver/ne/wms";
+
+// Add layers from GeoServer
+var dolakhaLayer = L.tileLayer.wms(geoserverUrl, {
+  layers: 'dolakha',
+  format: 'image/png',
+  transparent: true,
+  attribution: "GeoServer Dolakha"
+}).addTo(map);
+
+var NepalLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+layers: 'ne:NEW_DISTRICT',
+format: 'image/png',
+transparent: true,
+attribution: 'GeoServer NEW_DISTRICT'
+});
+
+var patchesLayer = L.tileLayer.wms(geoserverUrl, {
+  layers: 'patches',
+  format: 'image/png',
+  transparent: true,
+  attribution: "GeoServer Patches"
+}).addTo(map);
+
+var edgemapLayer = L.tileLayer.wms(geoserverUrl, {
+  layers: 'edgemap',
+  format: 'image/png',
+  transparent: true,
+  attribution: "GeoServer Edges"
+}).addTo(map);
+
+
+var forest_nonLayer = L.tileLayer.wms(geoserverUrl, {
+  layers: 'h_n',
+  format: 'image/png',
+  transparent: true,
+  attribution: "GeoServer Forest/Non-Forest"
+}).addTo(map);
+
+var intersectedRoadsLayer = L.tileLayer.wms(geoserverUrl, {
+  layers: 'intersected_roads_patches',
+  format: 'image/png',
+  transparent: true,
+  attribution: "GeoServer Intersected Roads"
+}).addTo(map);
+
+var intersectedRoutesLayer = L.tileLayer.wms(geoserverUrl, {
+  layers: 'intersected_routes_patches',
+  format: 'image/png',
+  transparent: true,
+  attribution: "GeoServer Intersected Routes"
+}).addTo(map);
+
+var intersectedBridgeLayer = L.tileLayer.wms(geoserverUrl, {
+  layers: 'intersected_bridges_patches',
+  format: 'image/png',
+  transparent: true,
+  attribution: "GeoServer Intersected Bridges"
+}).addTo(map);
+
+var ndvi2013Layer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+layers: 'ne:NDVI2013',
+format: 'image/png',
+transparent: true,
+attribution: 'GeoServer NDVI2013'
+});
+
+var ndvi2023Layer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+layers: 'ne:NDVI2023',
+format: 'image/png',
+transparent: true,
+attribution: 'GeoServer NDVI2023'
+});
+
+var ndvidiffLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+layers: 'ne:ndvidiff',
+format: 'image/png',
+transparent: true,
+attribution: 'GeoServer NDVI Difference'
+});
+
+
+var Flow_DirLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+layers: '	ne:FlowDir_Fill11',
+format: 'image/png',
+transparent: true,
+attribution: 'GeoServer NDVI Difference'
+});
+
+
+// Layer control
+var baseLayers = {
+  "OpenStreetMap":osm,
+ 
+};
+
+var overlayLayers = {
+  "Nepal":NepalLayer,
+  "Dolakha": dolakhaLayer,
+  "Patches": patchesLayer,
+  "Edges": edgemapLayer,
+  "Forest/Non-Forest": forest_nonLayer,
+  "Intersected Roads": intersectedRoadsLayer,
+  "Intersected Routes": intersectedRoutesLayer,
+  "Intersected Bridges": intersectedBridgeLayer,
+  "NDVI 2013": ndvi2013Layer,
+  "NDVI 2023": ndvi2023Layer,
+  "NDVI Difference": ndvidiffLayer,
+  "Flow Direction":Flow_DirLayer
+  
+};
+L.control.layers(baseLayers, overlayLayers).addTo(map)
+
+    // Measurement tool
+    L.control.measure({
+      primaryLengthUnit: 'meters',
+      secondaryLengthUnit: 'kilometers',
+      primaryAreaUnit: 'sqmeters',
+      secondaryAreaUnit: 'hectares',
+      activeColor: '#ff5733',
+      completedColor: '#3388ff'
+    }).addTo(map);
+
+    // EasyPrint plugin
+    L.easyPrint({
+  title: 'Print Map',
+  position: 'topright',
+  sizeModes: ['Current', 'A4Landscape', 'A4Portrait'],
+  filename: 'Map_Print',
+  exportOnly: true // Use this if there's an issue with direct printing
+}).addTo(map);
+
+
+    L.control.scale().addTo(map);
+  </script>
+</body>
+</html>

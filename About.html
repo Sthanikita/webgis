@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* About Us Section with Greyish Background */
+        .about-us {
+            text-align: center;
+            padding: 50px 0;
+            background: linear-gradient(135deg, #8e8e8e, #b0b0b0); /* Greyish gradient */
+            color: #fff;
+        }
+        .about-us h2 {
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        .team-member {
+            margin-bottom: 30px;
+        }
+        .team-member img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .team-member h4 {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        .team-member p {
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 40px;
+            animation: bounce 1.5s infinite;
+        }
+        .scroll-indicator a {
+            font-size: 2rem;
+            color: #fff;
+            text-decoration: none;
+        }
+        .scroll-indicator a:hover {
+            color: #ff7b00;
+        }
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* About Application Section */
+        .about-application {
+            padding: 60px 0;
+            background-color: #f0f8ff;
+            color: #333;
+            text-align: center;
+        }
+        .about-application h2 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 40px;
+        }
+        .about-application p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #555;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        .Link{
+            font-size:1.3rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- About Us Section -->
+    <section class="about-us">
+        <div class="container">
+            <h2>About Us</h2>
+            <div class="row">
+                <!-- Team Member 1 -->
+                <div class="col-md-4 team-member">
+                    <img src="Nikita.png" alt="Nikita Shrestha">
+                    <h4>Nikita Shrestha</h4>
+                    <p>Exploring the Geomatics world. A passionate geospatial enthusiastic. I thrive on applying innovative geospatial solutions to areas like urban planning, agriculture, and environmental management. <br><br>Email: shresthanikita58@gmail.com <br>Contact number: 9742423658 </p>
+                </div>
+                <!-- Team Member 2 -->
+                <div class="col-md-4 team-member">
+                    <img src="Niii.jpeg" alt="Nista Shrestha">
+                    <h4>Nista Shrestha</h4>
+                    <p>Driven geospatial and technology enthusiast with a passion for integrating technologies like Remote Sensing, GIS, Mapping, Data Analysis and Programming. I aim to deliver innovative solutions that bridge technology and real-world challenges. <br><br>Email: nistashrestha90@gmail.com <br>Contact number: 9849447187</p>
+                </div>
+                <!-- Team Member 3 -->
+                <div class="col-md-4 team-member">
+                    <img src="Rijan.png" alt="Rijan Shrestha">
+                    <h4>Rijan Shrestha</h4>
+                    <p>Dedicated web developer passionate about creating innovative and user-focused digital solutions. I strive to combine creativity with functionality to deliver impactful and accessible web experiences. Let's connect to explore potential collaborations or opportunities. <br><br>Email: rij6012@gmail.com <br>Contact number: 9861862006</p>
+                </div>
+            </div>
+        </div>
+        <p>
+        </p>
+        <p class="Link">
+            Explore more about the web application on my <a href="https://www.linkedin.com/posts/nista-shrestha-27b16a292_webgis-geospatialtechnology-gismapping-activity-7282381158179356673-Ngz4?utm_source=social_share_sheet&utm_medium=member_desktop_web"
+             target="_blank" style="color: #fff; text-decoration: underline;">LinkedIn Profile</a>.<br>
+              
+        </p>
+        
+        <!-- Scroll Down Indicator -->
+        <div class="scroll-indicator">
+            <a href="#about-application">&#8595; Scroll Down to Learn About the Application</a>
+        </div>
+    </section>
+
+    <!-- About the Application Section -->
+    <section id="about-application" class="about-application">
+        <div class="container">
+            <h2>About the Application</h2>
+            <p>This application is designed to offer a comprehensive platform for analyzing the environmental impacts of linear infrastructure development in the Gaurishankar Conservation Area. It provides an interactive experience that allows users to explore geospatial data related to biodiversity, habitat fragmentation, deforestation, and other ecological changes. Through dynamic map layers, users can visualize how infrastructure projects influence the region's natural environment, including overlays of vegetation, wildlife, and development data. The application includes spatial query functionality, enabling users to filter and analyze specific data points such as proximity to roads or changes in land cover over time. Additionally, the application integrates with external APIs, providing real-time environmental data that enhances the analysis. Built with a modern technology stack using HTML, CSS, JavaScript, Bootstrap, and a three-tier architecture with PostgreSQL/PostGIS for data storage, GeoServer for spatial data services, and Python Django for server-side logic, the application offers a user-friendly interface and efficient data management. This tool is essential for researchers, conservationists, and policymakers, helping them assess the impact of infrastructure development on biodiversity and make informed decisions for conservation efforts.</p>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+

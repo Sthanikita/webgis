@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet GeoServer Example</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Leaflet CSS and JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet Measure Plugin -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure/dist/leaflet-measure.css" />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-measure/dist/leaflet-measure.js"></script>
+  <!-- Leaflet EasyPrint Plugin -->
+  <script src="https://rawgit.com/rowanwins/leaflet-easyPrint/gh-pages/dist/bundle.js"></script>
+  <!-- Chart.js for Patch Distribution -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Text:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+      background-color: #f9f7f1;
+    }
+    #map {
+      width: 100%;
+      height: 75vh;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif; 
+        font-size: 2.2rem; 
+        font-weight: 700; 
+        color: #333; 
+        text-align: center; 
+        margin-top: 10px; 
+        margin-bottom: 20px; 
+        line-height: 1.4;
+        text-transform: capitalize; 
+        letter-spacing: 0.5px; 
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); 
+        border-bottom: 2px solid #f0a500; 
+        display: inline-block; 
+        padding-bottom: 5px;
+    }
+    
+   
+
+    .content {
+    max-width: 900px; 
+    margin: 40px auto; 
+    padding: 20px; 
+    background-color: #fff; 
+    border-radius: 10px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
+    border-left: 8px solid #d4af37; 
+  }
+
+  .content p {
+    margin-bottom: 20px; 
+    font-family: italic;
+    font-size: 1.7rem; 
+    line-height: 1.8; 
+    text-align: justify; 
+    color: black; 
+  }
+
+  .content strong {
+    color: #b8860b; 
+    font-weight: bold; 
+  }
+
+  .content p:first-child {
+    font-size: 1.7rem;  
+    color:black; 
+  }
+
+  /* Add spacing for each section */
+  .content p + p {
+    margin-top: 15px;
+  }
+   
+    
+  </style>
+</head>
+<body>
+  <h1>Deforestation Analysis in GCAP Dolakha</h1>
+
+  <div id="map"></div>
+  <div class="content">
+  
+    <p>
+      <span class="highlight">Deforestation in the Gaurishankar Conservation Area Project (GCAP)</span> of Dolakha poses a critical threat to the region's rich biodiversity and ecological balance. Unregulated activities such as illegal logging, agricultural encroachment, and infrastructure development, particularly road construction, have significantly contributed to forest degradation.
+  </p>
+  <p>
+      The construction of linear infrastructure has fragmented dense forests, disrupting vital wildlife corridors and exposing the ecosystem to severe edge effects. These activities have accelerated habitat loss for endangered species such as the <span class="highlight">red panda</span> and <span class="highlight">snow leopard</span>, further endangering their survival. Additionally, the overexploitation of forest resources by local communities for firewood, timber, and grazing has intensified deforestation, leaving the area vulnerable to erosion, landslides, and declining water quality.
+  </p>
+  <h2>Environmental Consequences</h2>
+  <p>
+      The environmental consequences of deforestation in GCAP extend beyond biodiversity loss. The depletion of forest cover reduces carbon sequestration capacity, exacerbating the impacts of climate change in an already sensitive Himalayan region. Soil degradation and the destabilization of slopes increase the frequency of natural disasters, posing risks to both human and wildlife populations.
+  </p> 
+  </div>
+
+  <script>
+   // Initialize the map
+   var map = L.map('map').setView([27.7, 85.3], 8); // Set to your region
+
+// Add a base map layer (OpenStreetMap)
+osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+var CartoDB_DarkMatterNoLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+	subdomains: 'abcd',
+	maxZoom: 20
+});
+
+// Add GeoServer WMS layers
+var dolakhaLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+      layers: 'dolakha',
+      format: 'image/png',
+      transparent: true,
+      attribution: "GeoServer Dolakha"
+    }).addTo(map);
+
+var ndvi2013Layer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+    layers: 'ne:NDVI2013',
+    format: 'image/png',
+    transparent: true,
+    attribution: 'GeoServer NDVI2013'
+});
+
+var ndvi2023Layer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+    layers: 'ne:NDVI2023',
+    format: 'image/png',
+    transparent: true,
+    attribution: 'GeoServer NDVI2023'
+});
+
+var ndvidiffLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+    layers: 'ne:ndvidiff',
+    format: 'image/png',
+    transparent: true,
+    attribution: 'GeoServer NDVI Difference'
+});
+var NepalLayer = L.tileLayer.wms('http://localhost:8080/geoserver/ne/wms', {
+    layers: 'ne:NEW_DISTRICT',
+    format: 'image/png',
+    transparent: true,
+    attribution: 'GeoServer NEW_DISTRICT'
+});
+
+// Add layers to a layer control
+var baseLayers = {
+    "OpenStreetMap": osm,
+    "DarkMap":CartoDB_DarkMatterNoLabels,
+  
+    }
+var overlays = {
+    "Nepal":NepalLayer,
+    "Dolakha": dolakhaLayer,
+    "NDVI 2013": ndvi2013Layer,
+    "NDVI 2023": ndvi2023Layer,
+    "NDVI Difference": ndvidiffLayer,
+};
+
+L.control.layers(baseLayers, overlays).addTo(map)
+
+    //  measurement tool
+    L.control.measure({
+      primaryLengthUnit: 'meters',
+      secondaryLengthUnit: 'kilometers',
+      primaryAreaUnit: 'sqmeters',
+      secondaryAreaUnit: 'hectares',
+      activeColor: '#ff5733',
+      completedColor: '#3388ff'
+    }).addTo(map);
+
+    // Add EasyPrint plugin
+    L.easyPrint({
+  title: 'Print Map',
+  position: 'topright',
+  sizeModes: ['Current', 'A4Landscape', 'A4Portrait'],
+  filename: 'Map_Print',
+}).addTo(map);
+
+
+    L.control.scale().addTo(map);
+  </script>
+</body>
+</html>

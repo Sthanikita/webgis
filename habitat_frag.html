@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet GeoServer Example</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Leaflet CSS and JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet Measure Plugin -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure/dist/leaflet-measure.css" />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-measure/dist/leaflet-measure.js"></script>
+  <!-- Leaflet EasyPrint Plugin -->
+  <script src="https://rawgit.com/rowanwins/leaflet-easyPrint/gh-pages/dist/bundle.js"></script>
+  <!-- Chart.js for Patch Distribution -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    
+  body {
+    font-family: 'Playfair Display', serif; 
+    background-color: #f9f7f1; 
+    color: black; 
+    margin: 0;
+    padding: 0;
+  }
+
+  .content {
+    max-width: 900px; 
+    margin: 40px auto; 
+    padding: 20px;
+    background-color: #fff; 
+    border-radius: 10px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
+    border-left: 8px solid #d4af37; 
+  }
+
+  .content p {
+    margin-bottom: 20px; 
+    font-family: 'Georgia', serif; 
+    font-size: 1.7rem; 
+    line-height: 1.8; 
+    text-align: justify; 
+    color: black; 
+  }
+
+  .content strong {
+    color: #b8860b; 
+    font-weight: bold; 
+  }
+
+  /* Add spacing for each section */
+  .content p + p {
+    margin-top: 15px;
+  }
+    #map {
+      width: 100%;
+      height: 75vh;
+    }
+    
+    
+    .leaflet-control-custom {
+      padding: 10px;
+      background-color: pink;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      display: none; /* Initially hidden */
+    }
+    .chart-container {
+      width: 100%;
+      height: 25vh;
+      padding: 10px;
+    }
+   
+    
+    .elegant-title {
+        font-family: 'Playfair Display', serif; 
+        font-size: 2.2rem; 
+        font-weight: 700; 
+        color: #333; 
+        text-align: center; 
+        margin-top: 10px; 
+        margin-bottom: 20px; 
+        line-height: 1.4; 
+        text-transform: capitalize; 
+        letter-spacing: 0.5px;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); 
+        border-bottom: 2px solid #f0a500; 
+        padding-bottom: 5px; 
+    }
+</style>
+  </style>
+</head>
+<body>
+  <h1 class="elegant-title">Habitat Fragmentation Analysis in GCAP</h1>
+  <div id="map"></div>
+  <div class="content">
+    <p>
+      Habitat fragmentation leads to biodiversity loss and extinction risk resulting from a single large landscape broken apart into many isolated smaller patches. This process drives habitats to shrink, ultimately resulting in habitat loss. Fragmentation limits the number of individuals in an area and significantly affects species richness and abundance. Furthermore, habitat fragmentation increases the proportion of edge to the total area, causing the <strong>edge effect</strong>, which enables microenvironmental stress on some species. 
+    </p>
+    <p>
+      For example, fragmented habitats have a smaller total area, and species with large home ranges, such as the hornbill and leopard, struggle to survive in such conditions. Although landscapes can naturally become fragmented due to rivers, lakes, or rugged terrain, human activities such as urban expansion, agricultural intensification, infrastructure development, and deforestation accelerate the fragmentation process.
+    </p>
+    <p>
+      In Nepal, rapid population growth and the associated expansion of urban areas have significantly contributed to habitat fragmentation, especially in regions like the Terai and mid-hills. The Terai Arc Landscape (TAL), home to critical species like tigers and rhinoceroses, faces increasing pressure from agricultural expansion, urbanization, and road construction, further isolating wildlife habitats.
+    </p>
+    <p>
+      Protected Areas (PAs), as defined by the International Union for Conservation of Nature (IUCN), are clearly demarcated landscapes managed to conserve nature through legal or other effective means. Nepal has established an extensive network of PAs, including national parks, wildlife reserves, conservation areas, and buffer zones, covering nearly 23% of the country’s total area. Policies within these PAs aim to minimize disturbances by limiting human activities, regulating deforestation, and promoting sustainable land use practices.
+    </p>
+    
+    <p>
+      For example, road networks in the Dolakha District of Gaurishankar Conservation Area have disrupted wildlife corridors, leading to human-wildlife conflict and increased edge effects. Additionally, unplanned tourism activities in high-altitude PAs like Sagarmatha National Park have intensified habitat degradation.
+    </p>
+    <p>
+      Thus, it is necessary to study and address factors that maximize the effectiveness of Nepal’s PAs. Strategies such as enhancing wildlife corridors, promoting landscape connectivity, and incorporating sustainable development practices are crucial. The use of geospatial analysis to monitor habitat changes and identify critical connectivity areas can guide decision-making and reduce fragmentation. Community involvement, particularly in buffer zone areas, is also essential to ensure the coexistence of wildlife and human activities. By integrating advanced technologies, effective policies, and community engagement, Nepal can mitigate the adverse impacts of habitat fragmentation and ensure long-term biodiversity conservation.
+    </p>
+    
+  </div>
+
+
+  <script>
+    // Initialize the map
+    var map = L.map('map').setView([27.7784, 86.1752], 10);
+    var baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+   
+    var satelliteLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+    });
+
+    // GeoServer URL for WMS
+var geoserverUrl = "http://localhost:8080/geoserver/ne/wms";
+
+    // Add layers from GeoServer
+    var dolakhaLayer = L.tileLayer.wms(geoserverUrl, {
+      layers: 'dolakha',
+      format: 'image/png',
+      transparent: true,
+      attribution: "GeoServer Dolakha"
+    }).addTo(map);
+
+    var NepalLayer = L.tileLayer.wms(geoserverUrl, {
+    layers: 'ne:NEW_DISTRICT',
+    format: 'image/png',
+    transparent: true,
+    attribution: 'GeoServer NEW_DISTRICT'
+});
+    var patchesLayer = L.tileLayer.wms(geoserverUrl, {
+      layers: 'patches',
+      format: 'image/png',
+      transparent: true,
+      attribution: "GeoServer Patches"
+    }).addTo(map);
+    patchesLayer.on('click', function(e) {
+      var patchDetails = `
+        <strong>Patch Info:</strong><br>
+        Number of Patches: 5420<br>
+        Largest Patch Area: 10342575.0 pixels<br>
+        Additional Patch Information...
+      `;
+      L.popup()
+        .setLatLng(e.latlng)
+        .setContent(patchDetails)
+        .openOn(map);
+    });
+
+    var edgemapLayer = L.tileLayer.wms(geoserverUrl, {
+      layers: 'edgemap',
+      format: 'image/png',
+      transparent: true,
+      attribution: "GeoServer Edges"
+    }).addTo(map);
+
+
+    var forest_nonLayer = L.tileLayer.wms(geoserverUrl, {
+      layers: 'h_n',
+      format: 'image/png',
+      transparent: true,
+      attribution: "GeoServer Forest/Non-Forest"
+    }).addTo(map);
+
+    var intersectedRoadsLayer = L.tileLayer.wms(geoserverUrl, {
+      layers: 'intersected_roads_patches',
+      format: 'image/png',
+      transparent: true,
+      attribution: "GeoServer Intersected Roads"
+    }).addTo(map);
+
+    var intersectedRoutesLayer = L.tileLayer.wms(geoserverUrl, {
+      layers: 'intersected_routes_patches',
+      format: 'image/png',
+      transparent: true,
+      attribution: "GeoServer Intersected Routes"
+    }).addTo(map);
+
+    var intersectedBridgeLayer = L.tileLayer.wms(geoserverUrl, {
+      layers: 'intersected_bridges_patches',
+      format: 'image/png',
+      transparent: true,
+      attribution: "GeoServer Intersected Bridges"
+    }).addTo(map);
+    
+
+    // Layer control
+    var baseLayers = {
+      "OpenStreetMap": baseLayer,
+      "Satellite": satelliteLayer,
+    };
+
+    var overlayLayers = {
+      "Nepal":NepalLayer,
+      "Dolakha": dolakhaLayer,
+      "Patches": patchesLayer,
+      "Edges": edgemapLayer,
+      "Forest/Non-Forest": forest_nonLayer,
+      "Intersected Roads": intersectedRoadsLayer,
+      "Intersected Routes": intersectedRoutesLayer,
+      "Intersected Bridges": intersectedBridgeLayer,
+    };
+
+    L.control.layers(baseLayers, overlayLayers).addTo(map);
+    
+
+    // measurement tool
+    L.control.measure({
+      primaryLengthUnit: 'meters',
+      secondaryLengthUnit: 'kilometers',
+      primaryAreaUnit: 'sqmeters',
+      secondaryAreaUnit: 'hectares',
+      activeColor: '#ff5733',
+      completedColor: '#3388ff'
+    }).addTo(map);
+
+    // EasyPrint plugin
+    L.easyPrint({
+      title: 'Print Map',
+      position: 'topright',
+      sizeModes: ['Current', 'A4Landscape', 'A4Portrait'],
+      filename: 'Map_Print'
+    }).addTo(map);
+
+    L.control.scale().addTo(map);
+    //Add custom control for region data
+    var regionDataDiv = L.DomUtil.create('div', 'leaflet-control-custom');
+    regionDataDiv.innerHTML = '<h4>Region Data</h4>' +
+                              '<p><strong>Number of Patches:</strong> 5420</p>' +
+                              '<p><strong>Largest Patch Area:</strong> 10,342,575.0 pixels</p>' +
+                              '<p><strong>Edge Density:</strong> 0.002 (units: length/area)</p>';
+    regionDataDiv.style.display = 'none'; // Initially hidden
+    var customControl = L.control({ position: 'topright' });
+    customControl.onAdd = function(map) {
+      return regionDataDiv;
+    };
+    customControl.addTo(map);
+
+    // Event listeners to show/hide region data when layers are toggled
+    map.on('overlayadd', function(event) {
+      if (event.name === "Patches" || event.name === "Edges") {
+        regionDataDiv.style.display = 'block';
+      }
+    });
+</script>
+</body>
+</html>
